@@ -70,11 +70,13 @@ def extract_from_chunk(chunk_path: str, meta_df: pandas.DataFrame, filter_shape:
             conv_depth = depth_keys.index(depth)
             for info_dict in info_list:
                 filter_size = info_dict["w"].shape[-2:]
+                in_channels = info_dict["w"].shape[1]
+                out_channels = info_dict["w"].shape[0]
                 weights = info_dict["w"].reshape(-1, *info_dict["w"].shape[-2:])  # infer first dim
                 num_filters = weights.shape[0]
                 if not filter_shape or filter_size == filter_shape:
                     filters[idx:idx + num_filters] = weights
-                    filter_infos.append([idx, idx + num_filters, model_id, layer_id, depth, conv_depth, conv_depth / (depth_len - 1)])
+                    filter_infos.append([idx, idx + num_filters, model_id, layer_id, depth, conv_depth, conv_depth / (depth_len - 1), in_channels, out_channels])
                     idx += num_filters
                     layer_id += 1
                     
@@ -106,7 +108,7 @@ def extract(args):
         all_filter_infos.extend(filter_infos)
 
     logging.info(f"writing filter info dataframe: {args.filter_info_output_file}")
-    filter_infos_pd = pandas.DataFrame(all_filter_infos, columns=["filter_id_start", "filter_id_end", "model", "layer_id", "depth", "conv_depth", "conv_depth_norm"])
+    filter_infos_pd = pandas.DataFrame(all_filter_infos, columns=["filter_id_start", "filter_id_end", "model", "layer_id", "depth", "conv_depth", "conv_depth_norm", "in_channels", "out_channels"])
     filter_infos_pd.to_csv(args.filter_info_output_file, index=False)
 
     del all_filter_infos
